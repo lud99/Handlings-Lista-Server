@@ -1,17 +1,20 @@
 const mongoose = require("mongoose");
 
-exports.connectDB = async callback => {
+exports.connectDB = async () => {
     try {        
+        console.log(process.env.MONGO_URI_HANDLINGS_LISTA)
         // Try to connect
-        const conn = await mongoose.connect(process.env.MONGO_URI, {
+        const conn = await mongoose.createConnection(process.env.MONGO_URI_HANDLINGS_LISTA, {
             useNewUrlParser: true,
             useFindAndModify: false,
             useCreateIndex: true,
             useUnifiedTopology: true
         });
 
-        console.log(`MongoDB connected: ${conn.connection.host}`);
+        global.connections.handlingsLista = conn;
+
+        console.log(`MongoDB connected: ${conn.host}`);
     } catch (error) {
-        return callback(error);
+        console.error(error);
     }
 }

@@ -22,8 +22,8 @@ const Send = {
 
 let ws, sessions;
 
-const start = (server) => {
-    ws = new WebSocketServer({ server });
+const start = (server, path) => {
+    ws = new WebSocketServer({ server, path });
 
     sessions = new Map();
 
@@ -280,11 +280,8 @@ const pingPong = (client) => {
     client.ping();
 }
 
-const disconnectClient = (client, reason = "disconnect") => {
+const disconnectClient = (client) => {
     const session = client.session;
-
-    if (webSocketLogLevel >= WebSocketLogLevels.Minimal)
-        console.log("Client disconnect. Reason:", reason)
             
     // If the client is in a session
     if (session) {
