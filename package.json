@@ -1,0 +1,19 @@
+{
+    "name": "handlingslista-server",
+    "version": "1.0.0",
+    "description": "The server for handlingslista",
+    "main": "server.js",
+    "scripts": {
+        "dev": "nodemon server.js",
+        "start": "node server.js"
+    },
+    "author": "Ludvig Magnusson",
+    "license": "ISC",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "mongoose": "^5.9.2",
+        "ws": "^7.2.1"
+    }
+}
