@@ -17,8 +17,6 @@ app.use(cors());
 // JSON
 app.use(express.json());
 
-const server = http.createServer(app);
-
 // Setup the websocket log level
 global.WebSocketLogLevels = {
     None: 0,
@@ -37,7 +35,7 @@ module.exports = () => {
     const PORT = process.env.HANDLINGS_LISTA_PORT || 8080;
 
     // Connect to the database, then start http and WebSocket server
-    module.startServer = async (path = "/") => {
+    module.startServer = async (server, path = "/") => {
         await connectDB();
 
         const WebSocketServer = require('./network/WebSocketServer');
@@ -47,14 +45,18 @@ module.exports = () => {
         app.use("/api/v1/users/lists", require("./routes/lists"));
         app.use("/api/v1/users/lists/items", require("./routes/items"));
 
-        server.listen(PORT, () => console.log("Handlings Lista's WebSocketServer running on port", PORT));
+        // Create and start the server manually if none is specified
+        if (!server) {
+            server = http.createServer(app);
+
+            server.listen(PORT, () => console.log("Handlings Lista's WebSocketServer running on port", PORT));
+        }
 
         // Start websocket server
         WebSocketServer(server, path);
     }
 
     module.app = app;
-    module.server = server;
 
     return module;
 }

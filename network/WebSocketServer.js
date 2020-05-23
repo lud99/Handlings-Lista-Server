@@ -25,6 +25,8 @@ let ws, sessions;
 const start = (server, path) => {
     ws = new WebSocketServer({ server, path });
 
+    console.log("Handlings Lista's WebSocketServer running on path '%s'", path)
+
     sessions = new Map();
 
     ws.on("connection", onConnection);
