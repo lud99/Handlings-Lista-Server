@@ -65,7 +65,7 @@ class ListApi {
         }
     }
 
-    static async reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex, sortOrder = "-createdAt", query = { userPin: pin, _id: listId }) {
+    static async reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex, query = { userPin: pin, _id: listId }) {
         try {
             const list = (await this.getById(pin, listId, query, { populate: "" })).data;
 

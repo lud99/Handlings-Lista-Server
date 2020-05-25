@@ -198,7 +198,7 @@ const handleMessage = async (client, message) => {
             case "reorder-list-items": {
                 const { pin, listId, itemOldPositionIndex, itemNewPositionIndex, sortOrder } = message;
                 
-                const response = await ListApi.reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex, sortOrder);
+                const response = await ListApi.reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex);
 
                 // Handle errors
                 if (response.error) apiError(response.error);
