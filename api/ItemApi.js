@@ -5,6 +5,30 @@ const ListApi = require("./ListApi");
 const ResponseHandler = require("./ResponseHandler");
 
 class ItemApi {
+    static async create (pin, text, listId, completed = false) {
+        try {
+            if (!pin || !listId) throw { message: "Invalid PIN or ListId Specified"}
+
+            const item = await Item.create({ text: text, listId: listId, userPin: pin, completed: completed });
+
+            const list = (await ListApi.getById(pin, listId)).data;
+
+            if (!list) throw { message: "Invalid PIN or ListId Specified"}
+
+            // Add the item to the start of the array
+            list.items.push(item);
+            
+            list.save(); // Save the changes
+
+            if (webSocketLogLevel == WebSocketLogLevels.Full)
+                console.log("Successfully added item '%s' to user '%s's list '%s'", item.text, pin, list.name);
+
+            return ResponseHandler.success(item);
+        } catch (error) {
+            return ResponseHandler.error(error);
+        }
+    }
+
     static async get(pin, query = { }, options = { one: false, sort: { createdAt: 1 } }) {
         try {
             query.userPin = pin;
@@ -75,31 +99,6 @@ class ItemApi {
 
             if (webSocketLogLevel == WebSocketLogLevels.Full)
                 console.log("Successfully renamed the user '%s's item '%s' to '%s'", pin, oldText, newText);
-
-            return ResponseHandler.success(item);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
-    }
-
-
-    static async create (pin, text, listId, completed = false) {
-        try {
-            if (!pin || !listId) throw { message: "Invalid PIN or ListId Specified"}
-
-            const item = await Item.create({ text: text, listId: listId, userPin: pin, completed: completed });
-
-            const list = (await ListApi.getById(pin, listId)).data;
-
-            if (!list) throw { message: "Invalid PIN or ListId Specified"}
-
-            // Add the item to the start of the array
-            list.items.unshift(item);
-            
-            list.save(); // Save the changes
-
-            if (webSocketLogLevel == WebSocketLogLevels.Full)
-                console.log("Successfully added item '%s' to user '%s's list '%s'", item.text, pin, list.name);
 
             return ResponseHandler.success(item);
         } catch (error) {
