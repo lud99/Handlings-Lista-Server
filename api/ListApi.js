@@ -27,10 +27,8 @@ class ListApi {
         }
     }
 
-    static async get (pin, query = { userPin: pin }, options = { one: false, populate: "items", sort: { items: "createdAt"} }) {
+    static async get(pin, query = { userPin: pin }, options = { one: false, populate: "items", sort: { items: "createdAt"} }) {
         try {
-            query.userPin = pin;
-
             const lists = await List[(options.one ? "findOne" : "find")](query).populate(options.populate).sort({ createdAt: 1 });
 
             return ResponseHandler.success(lists);
@@ -39,7 +37,7 @@ class ListApi {
         }
     }
 
-    static async getById (pin, listId, query = { _id: listId }, options = { populate: "items" }) {
+    static async getById(pin, listId, query = { _id: listId }, options = { populate: "items" }) {
         try {
             const list = await this.get(pin, query, { one: true, populate: options.populate, sort: { items: "-createdAt"} });
 
@@ -49,7 +47,7 @@ class ListApi {
         }
     }
 
-    static async setItems (pin, listId, newItems, query = { userPin: pin, _id: listId }) {
+    static async setItems(pin, listId, newItems, query = { userPin: pin, _id: listId }) {
         try {
             const list = (await this.getById(pin, listId, query)).data;
 
@@ -83,7 +81,6 @@ class ListApi {
             return ResponseHandler.error(error);
         }
     }
-
 
     static async rename(pin, listId, newName) {
         try {

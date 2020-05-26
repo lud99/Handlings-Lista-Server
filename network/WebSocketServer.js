@@ -150,6 +150,22 @@ const handleMessage = async (client, message) => {
 
                 break;
             }
+            case "get-list": {
+                const response = await ListApi.getById(undefined, message.listId);
+
+                // Handle errors
+                if (response.error) apiError(response.error);
+
+                // Also join the session if specified
+                if (message.joinSession) joinSession(client, response.data.userPin);
+                
+                if (webSocketLogLevel == WebSocketLogLevels.Full)
+                    console.log("Sending list '%s' to client '%s'", message.listId, client.id);
+
+                sendResponse(client, message, response, Send.Single);
+
+                break;
+            }
             // List items
             case "create-list-item": {
                 const response = await ItemApi.create(message.pin, message.text, message.listId);
