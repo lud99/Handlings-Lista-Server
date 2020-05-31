@@ -103,12 +103,12 @@ class ListApi {
         }
     }
 
-    static async delete(pin, id, query = { userPin: pin, _id: id }, options = { one: false }) {
+    static async delete(pin, id, query = { userPin: pin, _id: id }, options = { one: true }) {
         try {
             query.userPin = pin; 
             query._id = id;
 
-            await List[(options.one ? "deleteOne" : "deleteMany")](query);
+            await List.deleteOne(query);
 
             if (webSocketLogLevel == WebSocketLogLevels.Full)
                 console.log("Successfully deleted a list from the user '%s'", pin);
