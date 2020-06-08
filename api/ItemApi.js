@@ -9,9 +9,11 @@ class ItemApi {
         try {
             if (!pin || !listId) throw { message: "Invalid PIN or ListId Specified"}
 
-            const item = await Item.create({ text: text, listId: listId, userPin: pin, completed: completed });
-
             const list = (await ListApi.getById(pin, listId)).data;
+
+            if (list.completed) throw { message: "List is completed. No changes can be made" }
+
+            const item = await Item.create({ text: text, listId: listId, userPin: pin, completed: completed });
 
             if (!list) throw { message: "Invalid PIN or ListId Specified"}
 
@@ -54,16 +56,24 @@ class ItemApi {
         }
     }
 
-    static async updateState(pin, itemId, newCompletedState, query = { userPin: pin, itemId: itemId }, options = { one: true }) {
+    static async updateState(pin, itemId, listId, newCompletedState, query = { userPin: pin, itemId: itemId }, options = { one: true }) {
         try {
             query.userPin = pin;
             query.itemId = itemId;
 
             if (!newCompletedState) throw { message: "Invalid new completed state specified" }
 
-            const item = (await this.getById(pin, itemId, { }, options)).data;
+            // Get both the list and item at the same time
+            const promises = await Promise.all([
+                ListApi.getById(pin, listId),
+                this.getById(pin, itemId, { }, options)
+            ]);
+
+            const list = promises[0].data;
+            const item = promises[1].data;
 
             if (!item) throw { message: "Invalid PIN or Item ID specified" }
+            if (list.completed) throw { message: "List is completed. No changes can be made" }
 
             // Update the completed state
             if (newCompletedState == "toggle") // Toggle it

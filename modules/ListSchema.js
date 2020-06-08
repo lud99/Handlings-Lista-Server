@@ -15,6 +15,10 @@ const ListSchema = mongoose.Schema({
         maxLength: 6,
         require: true
     },
+    completed: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now

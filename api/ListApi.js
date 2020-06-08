@@ -103,6 +103,20 @@ class ListApi {
         }
     }
 
+    static async setCompleted(pin, listId, completed) {
+        try {
+            const list = (await this.getById(pin, listId)).data;
+
+            list.completed = completed;
+
+            list.save();
+
+            return ResponseHandler.success(list);
+        } catch (error) {
+            return ResponseHandler.error(error);
+        }
+    }
+
     static async delete(pin, id, query = { userPin: pin, _id: id }, options = { one: true }) {
         try {
             query.userPin = pin; 

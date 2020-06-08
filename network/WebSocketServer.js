@@ -137,6 +137,20 @@ const handleMessage = async (client, message) => {
 
                 break;
             }
+            case "set-list-completed": {
+                const response = await ListApi.setCompleted(message.pin, message.listId, message.completed);
+
+                // Handle errors
+                if (response.error) apiError(response.error);
+
+                // Join session if the client is for some reason not in one
+                if (!client.session)
+                    joinSession(client, message.pin);
+
+                sendResponse(client, message, response, Send.Broadcast);
+
+                break;
+            }
             case "get-lists": {
                 const response = await UserApi.get({ pin: message.pin }, { one: true });
 
@@ -198,7 +212,7 @@ const handleMessage = async (client, message) => {
             case "update-list-item-state": {
                 const newState = message.newState || "toggle";
 
-                const response = await ItemApi.updateState(message.pin, message.itemId, newState);
+                const response = await ItemApi.updateState(message.pin, message.itemId, message.listId, newState);
 
                 // Handle errors
                 if (response.error) apiError(response.error);
