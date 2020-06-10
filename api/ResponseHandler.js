@@ -22,11 +22,13 @@ class ResponseHandler
     static errorToJSON(error)
     {
         // Convert the error to JSON
-        const json = JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        var json = JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)));
+
+        if (!json.message) json = { message: json }
 
         // If not in development mode
 
-        if (process.env.NODE_ENV !=="dev")
+        if (process.env.NODE_ENV !== "dev")
             delete json.stack; // Remove the stack for safety purposes if not in development mode
 
         return json;
@@ -81,9 +83,11 @@ class ResponseHandler
      */
     static error(error)
     {
+        console.error(error);
+        
         return { 
             success: false, 
-            error: error,
+            error: this.errorToJSON(error),
         }; 
     }
 
@@ -95,8 +99,7 @@ class ResponseHandler
      * 
      * @return {{ success: true, data: {} }} 
      */
-    static success(data, otherData = undefined)
-    {
+    static success(data, otherData = undefined) {
         if (data && data.success)
             return data;
             
@@ -107,21 +110,12 @@ class ResponseHandler
         }; 
     }
 
-    /**
-     * Return the error message for when a pin isn't specified
-     * 
-     * @param {Number} pin - The invalid pin
-     * @param {*} otherData - Any other data to be send
-     * 
-     * @return {{ success: false, message: "Invalid PIN Specified", }} 
-     */
-    static invalidPIN(pin = undefined, otherData = undefined)
-    {
-        return { 
-            message: "Invalid PIN Specified",
-            pin: pin,
-            otherData
-        }; 
+    static invalidPIN() {
+        return "Invalid PIN Specified";
+    }
+
+    static loginFailed() {
+        return "Login failed. Invalid PIN Specified";
     }
 }
 

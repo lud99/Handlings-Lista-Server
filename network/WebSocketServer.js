@@ -25,7 +25,7 @@ let ws, sessions;
 const start = (server, path) => {
     ws = new WebSocketServer({ server, path });
 
-    console.log("Handlings Lista's WebSocketServer running on path '%s'", path)
+    console.log("Handlingslista's WebSocketServer running on path '%s'", path)
 
     sessions = new Map();
 
@@ -58,10 +58,10 @@ const handleMessage = async (client, message) => {
         switch (message.type) {
             // Account
             case "login": {
-                const response = await UserApi.login(message.pin);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    UserApi.login(message.pin)
+                );
 
                 if (webSocketLogLevel >= WebSocketLogLevels.Minimal)
                     console.log("Client '%s' logged in", client.id);
@@ -74,10 +74,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "valid-pin": {
-                const response = await UserApi.valid(message.pin);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    UserApi.valid(message.pin)
+                );
 
                 sendResponse(client, message, response, Send.Single)
 
@@ -85,10 +85,10 @@ const handleMessage = async (client, message) => {
             }
             // Users
             case "create-user": {
-                const response = await UserApi.create();
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    UserApi.create()
+                );
 
                 sendResponse(client, message, response, Send.Single)
 
@@ -96,10 +96,10 @@ const handleMessage = async (client, message) => {
             }
             // Lists
             case "create-list": {
-                const response = await ListApi.create(message.pin, message.name);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.create(message.pin, message.name, message.items)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -110,10 +110,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "remove-list": {
-                const response = await ListApi.delete(message.pin, message.listId);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.delete(message.pin, message.listId)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -124,10 +124,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "rename-list": {
-                const response = await ListApi.rename(message.pin, message.listId, message.newName);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.rename(message.pin, message.listId, message.newName)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -138,10 +138,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "set-list-completed": {
-                const response = await ListApi.setCompleted(message.pin, message.listId, message.completed);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.setCompleted(message.pin, message.listId, message.completed)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -152,10 +152,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "get-lists": {
-                const response = await UserApi.get({ pin: message.pin }, { one: true });
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    UserApi.get({ pin: message.pin }, { one: true })
+                );
 
                 if (webSocketLogLevel == WebSocketLogLevels.Full)
                     console.log("Sending lists to client '%s' with the pin '%s'", client.id, message.pin);
@@ -165,10 +165,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "get-list": {
-                const response = await ListApi.getById(undefined, message.listId);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.getById(undefined, message.listId)
+                );
 
                 // Also join the session if specified
                 if (message.joinSession) joinSession(client, response.data.userPin);
@@ -182,10 +182,10 @@ const handleMessage = async (client, message) => {
             }
             // List items
             case "create-list-item": {
-                const response = await ItemApi.create(message.pin, message.text, message.listId);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ItemApi.create(message.pin, message.text, message.listId)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -196,10 +196,24 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "remove-list-item": {
-                const response = await ItemApi.delete(message.pin, message.itemId, message.listId);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ItemApi.delete(message.pin, message.itemId, message.listId)
+                );
+                
+                // Join session if the client is for some reason not in one
+                if (!client.session)
+                    joinSession(client, message.pin);
 
-                // Handle errors
-                if (response.error) apiError(response.error);
+                sendResponse(client, message, response, Send.Broadcast);
+
+                break;
+            }
+            case "toggle-list-item-state": {
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ItemApi.toggleState(message.pin, message.itemId, message.listId)
+                );
                 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -210,12 +224,10 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "update-list-item-state": {
-                const newState = message.newState || "toggle";
-
-                const response = await ItemApi.updateState(message.pin, message.itemId, message.listId, newState);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ItemApi.updateState(message.pin, message.itemId, message.listId, message.state)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -226,12 +238,12 @@ const handleMessage = async (client, message) => {
                 break;
             }
             case "reorder-list-items": {
-                const { pin, listId, itemOldPositionIndex, itemNewPositionIndex, sortOrder } = message;
-                
-                const response = await ListApi.reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex);
+                const { pin, listId, itemOldPositionIndex, itemNewPositionIndex } = message;
 
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -242,10 +254,10 @@ const handleMessage = async (client, message) => {
                 break; 
             }
             case "rename-list-item": {
-                const response = await ItemApi.rename(message.pin, message.itemId, message.newText);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ItemApi.rename(message.pin, message.itemId, message.newText)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -255,11 +267,11 @@ const handleMessage = async (client, message) => {
 
                 break; 
             }
-            case "set-list-items": {                
-                const response = await ListApi.setItems(message.pin, message.listId, message.newItems);
-
-                // Handle errors
-                if (response.error) apiError(response.error);
+            case "set-list-items": {              
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.setItems(message.pin, message.listId, message.newItems)
+                );
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -376,6 +388,14 @@ const sendResponse = (client, message, response, sendType = Send.Single) => {
         client.session.broadcast(res);
 }
 
-const apiError = (error) => console.log("API Error: '%s'", error.message) 
+const accessApi = async (promise) => {
+    try {
+        const data = await promise;
+
+        return ResponseHandler.success(data);
+    } catch (error) {
+        return ResponseHandler.error(error);
+    }
+}
 
 module.exports = start;

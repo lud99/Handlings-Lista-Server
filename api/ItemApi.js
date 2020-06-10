@@ -1,146 +1,82 @@
 const Item = require("../modules/ItemSchema");
 
-const ListApi = require("./ListApi");
-
-const ResponseHandler = require("./ResponseHandler");
+const { ListUtils, ItemUtils } = require("./ApiUtils");
 
 class ItemApi {
-    static async create (pin, text, listId, completed = false) {
-        try {
-            if (!pin || !listId) throw { message: "Invalid PIN or ListId Specified"}
+    static async create(pin, text, listId, completed = false) {
+        if (!pin || !listId) throw "Invalid PIN or ListId Specified";
 
-            const list = (await ListApi.getById(pin, listId)).data;
+        const list = await ListUtils.getById(pin, listId);
 
-            if (list.completed) throw { message: "List is completed. No changes can be made" }
+        if (list.completed) throw "List is completed. No changes can be made";
 
-            const item = await Item.create({ text: text, listId: listId, userPin: pin, completed: completed });
+        const item = await Item.create({ 
+            userPin: pin,
+            text, 
+            listId, 
+            completed
+        });
 
-            if (!list) throw { message: "Invalid PIN or ListId Specified"}
+        if (!list) throw "Invalid PIN or ListId Specified";
 
-            // Add the item to the start of the array
-            list.items.push(item);
-            
-            list.save(); // Save the changes
+        list.items.push(item);
+        
+        list.save();
 
-            if (webSocketLogLevel == WebSocketLogLevels.Full)
-                console.log("Successfully added item '%s' to user '%s's list '%s'", item.text, pin, list.name);
-
-            return ResponseHandler.success(item);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
+        return item;
     }
 
-    static async get(pin, query = { }, options = { one: false, sort: { createdAt: 1 } }) {
-        try {
-            query.userPin = pin;
+    static async updateState(pin, itemId, listId, completed, toggleState = false) {
+        // Get both the list and item at the same time
+        const [list, item] = await Promise.all([
+            ListUtils.getById(pin, listId),
+            ItemUtils.getById(pin, itemId)
+        ]);
 
-            const items = await Item[(options.one ? "findOne" : "find")](query).sort(options.sort);
+        if (!item) throw "Invalid PIN or Item ID specified";
+        if (list.completed) throw "List is completed. No changes can be made";
 
-            return ResponseHandler.success(items);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
+        // Update the completed state by either toggling it or setting it
+        toggleState ? item.completed = !item.completed : item.completed = completed;
+
+        item.save();
+
+        return item;
     }
 
-    static async getById(pin, itemId, query = { userPin: pin, _id: itemId }) {
-        try {
-            query.userPin = pin;
-            query._id = itemId;
-
-            const item = await this.get(pin, query, { one: true });
-
-            return ResponseHandler.success(item);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
-    }
-
-    static async updateState(pin, itemId, listId, newCompletedState, query = { userPin: pin, itemId: itemId }, options = { one: true }) {
-        try {
-            query.userPin = pin;
-            query.itemId = itemId;
-
-            if (!newCompletedState) throw { message: "Invalid new completed state specified" }
-
-            // Get both the list and item at the same time
-            const promises = await Promise.all([
-                ListApi.getById(pin, listId),
-                this.getById(pin, itemId, { }, options)
-            ]);
-
-            const list = promises[0].data;
-            const item = promises[1].data;
-
-            if (!item) throw { message: "Invalid PIN or Item ID specified" }
-            if (list.completed) throw { message: "List is completed. No changes can be made" }
-
-            // Update the completed state
-            if (newCompletedState == "toggle") // Toggle it
-                item.completed = !item.completed;
-            else
-                item.completed = newCompletedState == "true"; // Set it to a bool
-
-            item.save(); // Save the changes
-
-            if (webSocketLogLevel == WebSocketLogLevels.Full)
-                console.log("Successfully updated the user '%s's item '%s's completed state to '%s'", pin, item.text, item.completed);
-
-            return ResponseHandler.success(item);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
+    static async toggleState(pin, itemId, listId) {
+        return await this.updateState(pin, itemId, listId, null, true);
     }
 
     static async rename(pin, itemId, newText) {
-        try {
-            const item = (await this.getById(pin, itemId)).data;
+        const item = await ItemUtils.getById(pin, itemId);
 
-            if (!item) throw { message: "Invalid PIN or Item ID specified" }
+        if (!item) throw "Invalid PIN or Item ID specified";
 
-            if (item.text === newText)
-                return ResponseHandler.error({ message: "The list already has that name" });
+        if (item.text === newText) return item; 
 
-            const oldText = item.text;
+        item.text = newText;
 
-            item.text = newText;
+        item.save();
 
-            item.save();
-
-            if (webSocketLogLevel == WebSocketLogLevels.Full)
-                console.log("Successfully renamed the user '%s's item '%s' to '%s'", pin, oldText, newText);
-
-            return ResponseHandler.success(item);
-        } catch (error) {
-            return ResponseHandler.error(error);
-        }
+        return item;
     }
 
-    static async delete(pin, itemId, listId, query = { userPin: pin, _id: listId }, options = { one: false }) {
-        try {
-            query.userPin = pin;
-            query._id = itemId;
+    static async delete(pin, itemId, listId, query = { userPin: pin, _id: listId }) {
+        await Item.deleteOne(query);
 
-            await Item[(options.one ? "deleteOne" : "deleteMany")](query);
+        const list = await ListUtils.getById(pin, listId);
 
-            const list = (await ListApi.get(pin, { userPin: pin, _id: listId }, { one: true, populate: "" })).data;
+        if (!list) throw "Invalid PIN or ListId Specified";
 
-            if (!list) throw { message: "Invalid PIN or ListId Specified" }
-
-            for (let i = 0; i < list.items.length; i++) {
-                if (list.items[i] == itemId)
+        for (let i = 0; i < list.items.length; i++) {
+            if (list.items[i] == itemId)
                 list.items.splice(i, 1);
-            }
-            
-            list.save();
-
-            if (webSocketLogLevel == WebSocketLogLevels.Full)
-                console.log("Successfully removed an item from user '%s's list '%s'", pin, list.name);
-
-            return ResponseHandler.success({ listId: listId, itemId: itemId });
-        } catch (error) {
-            return ResponseHandler.error(error);
         }
+        
+        list.save();
+
+        return ({ listId: listId, itemId: itemId });
     }
 }
 
