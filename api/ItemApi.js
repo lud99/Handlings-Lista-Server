@@ -69,11 +69,11 @@ class ItemApi {
 
         if (!list) throw "Invalid PIN or ListId Specified";
 
-        for (let i = 0; i < list.items.length; i++) {
-            if (list.items[i] == itemId)
-                list.items.splice(i, 1);
-        }
-        
+        // Find the specified item, and then the index of it in the items array to easily remove it
+        const itemToDeleteIndex = list.items.indexOf(list.items.find(item => item._id == itemId));
+
+        list.items.splice(itemToDeleteIndex, 1);
+
         list.save();
 
         return ({ listId: listId, itemId: itemId });

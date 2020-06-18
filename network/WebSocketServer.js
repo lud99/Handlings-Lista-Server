@@ -101,6 +101,8 @@ const handleMessage = async (client, message) => {
                     ListApi.create(message.pin, message.name, message.items)
                 );
 
+                console.log("create list");
+
                 // Join session if the client is for some reason not in one
                 if (!client.session)
                     joinSession(client, message.pin);

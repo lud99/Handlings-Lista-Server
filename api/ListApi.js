@@ -6,7 +6,7 @@ const { UserUtils, ListUtils } = require("./ApiUtils");
 
 class ListApi {
     static async create(pin, name, items) {
-        const list = await List.create({ name: name, userPin: pin });
+        var list = await List.create({ name: name, userPin: pin });
 
         // Create new list items from the specified items (if there are any) 
         if (items && items.length > 0) {
@@ -15,9 +15,14 @@ class ListApi {
             // Create all list items simuntaneously and get the data from the responses
             const listItems = await Promise.all(promises);
 
+            console.log(listItems, items)
+
             list.items = listItems.map(item => item._id);
 
             await list.save();
+            
+            // Populate the list
+            list = await List.populate(list, "items");
         }
 
         const user = await UserUtils.getByPin(pin);
