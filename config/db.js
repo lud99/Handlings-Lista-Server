@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 exports.connectDB = async () => {
     try {        
-        console.log(process.env.NODE_ENV)
         const uri = process.env.NODE_ENV === "dev" ? 
             process.env.MONGO_URI_HANDLINGS_LISTA_DEV : process.env.MONGO_URI_HANDLINGS_LISTA_PROD;
 

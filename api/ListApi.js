@@ -1,28 +1,29 @@
 const List = require("../modules/ListSchema");
 
-const ItemApi = require("./ItemApi");
+const Item = require("../modules/ItemSchema");
 
 const { UserUtils, ListUtils } = require("./ApiUtils");
 
 class ListApi {
     static async create(pin, name, items) {
-        var list = await List.create({ name: name, userPin: pin });
+        const list = await List.create({ name: name, userPin: pin });
 
         // Create new list items from the specified items (if there are any) 
         if (items && items.length > 0) {
-            const promises = items.map(item => ItemApi.create(pin, item.text, list._id, item.completed));
+            // Filter out the completed items
+            const filteredItems = items.filter(item => !item.completed);
 
-            // Create all list items simuntaneously and get the data from the responses
-            const listItems = await Promise.all(promises);
+            const promises = filteredItems.map(item => Item.create({ 
+                userPin: pin, 
+                text: item.text, 
+                listId: list._id, 
+                completed: item.completed
+            }));
 
-            console.log(listItems, items)
+            // Create all list items simuntaneously and set the list's items to it
+            list.items = await Promise.all(promises);
 
-            list.items = listItems.map(item => item._id);
-
-            await list.save();
-            
-            // Populate the list
-            list = await List.populate(list, "items");
+            list.save();
         }
 
         const user = await UserUtils.getByPin(pin);
@@ -79,7 +80,15 @@ class ListApi {
     }
 
     static async delete(pin, id) {
+        const list = await ListUtils.getById(pin, id);
+
+        // Remove all of the list's items simultaneously
+        await Promise.all(list.items.map(item => Item.deleteOne({ _id: item._id })));
+
+        // Remove the list itself
         await List.deleteOne({ userPin: pin, _id: id });
+
+        // TODO: Remove the user's reference to the list
 
         return ({ listId: id });
     }

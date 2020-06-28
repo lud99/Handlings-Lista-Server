@@ -7,6 +7,8 @@ const UserApi = require("../api/UserApi");
 const ListApi = require("../api/ListApi");
 const ItemApi = require("../api/ItemApi");
 
+const { ListUtils } = require("../api/ApiUtils");
+
 const ResponseHandler = require("../api/ResponseHandler");
 
 const Utils = require("../utils/Utils");
@@ -63,11 +65,11 @@ const handleMessage = async (client, message) => {
                     UserApi.login(message.pin)
                 );
 
-                if (webSocketLogLevel >= WebSocketLogLevels.Minimal)
+                if (response.success && webSocketLogLevel >= WebSocketLogLevels.Minimal)
                     console.log("Client '%s' logged in", client.id);
 
                 // Join session
-                joinSession(client, message.pin);
+                if (response.success) joinSession(client, message.pin);
 
                 sendResponse(client, message, response, Send.Single)
 
@@ -100,8 +102,6 @@ const handleMessage = async (client, message) => {
                 const response = await accessApi(
                     ListApi.create(message.pin, message.name, message.items)
                 );
-
-                console.log("create list");
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
@@ -169,7 +169,7 @@ const handleMessage = async (client, message) => {
             case "get-list": {
                 // Access the api functions through this function to automatically catch any errors 
                 const response = await accessApi(
-                    ListApi.getById(undefined, message.listId)
+                    ListUtils.getById(undefined, message.listId)
                 );
 
                 // Also join the session if specified

@@ -15,6 +15,8 @@ class UserApi {
                 }  
             });
 
+        if (!users) return null; 
+
         if (options.one) {
             users.lists = users.lists.sort(Utils.sortByProperty("-createdAt"));
         } else {
