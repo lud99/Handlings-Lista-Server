@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const UserApi = require("../api/UserApi");
+const { UserUtils } = require("../api/ApiUtils");
 
 const ResponseHandler = require("../api/ResponseHandler");
 
@@ -36,7 +37,19 @@ router.get("/all", async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const pin = parseInt(req.body.pin);
-        const response = await UserApi.getByPin(pin);
+
+        if (!pin) return res.json({
+            success: false,
+            error: "No pin specified"
+        });
+
+        const response = await UserUtils.getByPin(pin).populate({
+            path: "lists",
+            populate: {
+                path: "items",
+                model: "Item"
+            }  
+        });
         
         // Handle errors
         if (response.error) throw response.error;

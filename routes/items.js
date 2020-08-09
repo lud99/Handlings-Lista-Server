@@ -14,12 +14,13 @@ const ResponseHandler = require("../api/ResponseHandler");
 */
 router.get("/", async (req, res) => {
     try {
-        const response = await ItemApi.get(req.body.pin, req.body.listId);
+        //const response = await ItemApi.get(req.body.pin, req.body.listId);
         
         // Handle errors
-        if (response.error) throw response.error;
+        //if (response.error) throw response.error;
 
-        res.json(response);
+        //res.json(response);
+        res.end();
     } catch (error) {
         ResponseHandler.routeError(res, error);
     }
@@ -33,9 +34,14 @@ router.get("/", async (req, res) => {
 */
 router.post("/update-state", async (req, res) => {
     try {
-        const response = await ItemApi.updateState(req.body.pin, req.body.itemId, req.query.completed)
-        // Handle errors
-        if (response.error) throw response.error;
+        const completed = req.query.completed;
+
+        const response = await ItemApi.updateState(
+            req.body.pin, 
+            req.body.itemId, 
+            req.body.listId, 
+            completed == null ? null : completed, 
+            completed == null);
 
         res.json(response);
     } catch (error) {
@@ -52,7 +58,7 @@ router.post("/update-state", async (req, res) => {
 */
 router.post("/create", async (req, res) => {
     try {
-        const response = await ItemApi.create(req.body.pin, req.body.text, req.body.listId);
+        const response = await ItemApi.create(req.body.pin, req.body.text, req.body.listId, req.body.completed);
         
         // Handle errors
         if (response.error) throw response.error;
@@ -71,7 +77,7 @@ router.post("/create", async (req, res) => {
 */
 router.post("/delete", async (req, res) => {
     try {
-        const response = await ItemApi.delete(req.body.pin, req.body.id, req.body.listId);
+        const response = await ItemApi.delete(req.body.pin, req.body.itemId, req.body.listId);
 
         // Handle errors
         if (response.error) throw response.error;

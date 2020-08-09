@@ -3,6 +3,9 @@ const express = require("express");
 const router = express.Router();
 
 const ListApi = require("../api/ListApi");
+const List = require("../modules/ListSchema");
+
+const { ListUtils } = require("../api/ApiUtils");
 
 const ResponseHandler = require("../api/ResponseHandler");
 
@@ -16,9 +19,9 @@ router.get("/", async (req, res) => {
     try {
         // Get a specific list
         if (req.body.listId) 
-            var response = await ListApi.getById(req.body.pin, req.body.listId);
+            var response = await ListUtils.getById(req.body.pin, req.body.listId);
         else // Get all the users lists
-            var response = await ListApi.get(req.body.pin);
+            var response = await List.find({ userPin: req.body.pin }).populate("items");
         
         // Handle errors
         if (response.error) throw response.error;
@@ -37,7 +40,7 @@ router.get("/", async (req, res) => {
 */
 router.post("/create", async (req, res) => {
     try {
-        const response = await ListApi.create(req.body.pin, req.body.name);
+        const response = await ListApi.create(req.body.pin, req.body.name, req.body.items);
         
         // Handle errors
         if (response.error) throw response.error;
