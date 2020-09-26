@@ -283,6 +283,20 @@ const handleMessage = async (client, message) => {
 
                 break; 
             }
+            case "remove-completed-items": {              
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.removeCompletedItems(message.pin, message.listId)
+                );
+
+                // Join session if the client is for some reason not in one
+                if (!client.session)
+                    joinSession(client, message.pin);
+
+                sendResponse(client, message, response, Send.Broadcast);
+
+                break; 
+            }
 
             // Sessions
             case "join-session": {

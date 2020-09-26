@@ -79,6 +79,16 @@ class ListApi {
         return list;
     }
 
+    static async removeCompletedItems(pin, listId) {
+        const list = await ListUtils.getById(pin, listId).populate("items");
+
+        list.items = list.items.filter(item => !item.completed); // Filter out the completed items
+
+        list.save();
+
+        return list;
+    }
+
     static async delete(pin, id) {
         const list = await ListUtils.getById(pin, id);
 
