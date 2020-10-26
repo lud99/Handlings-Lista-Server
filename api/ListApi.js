@@ -4,9 +4,31 @@ const Item = require("../modules/ItemSchema");
 
 const { UserUtils, ListUtils } = require("./ApiUtils");
 
+const Utils = require("../utils/Utils");
+
 class ListApi {
     static async create(pin, name, items) {
-        const list = await List.create({ name: name, userPin: pin });
+        const allLists = await List.find();
+
+        let list;
+
+        const maxIterations = 20;
+        for (let i = 0; i < maxIterations; i++) {
+            const displayId = Utils.createIdLetters(10);
+
+            // Check if a list with the id doesn't exist
+            if (!allLists.find(list => list.displayId === displayId)) {
+                list = await List.create({ 
+                    displayId: displayId, 
+                    name: name, 
+                    userPin: pin 
+                });
+
+                break;
+            }
+        }
+
+        if (!list) throw "Duplicate list display ids"; // Should happen...
 
         // Create new list items from the specified items (if there are any) 
         if (items && items.length > 0) {
@@ -28,8 +50,9 @@ class ListApi {
 
         const user = await UserUtils.getByPin(pin);
         user.lists.push(list._id);
+        user.stats.createdListsCount++;
 
-        user.save();
+        await user.save();
 
         return list;
     }
@@ -41,9 +64,7 @@ class ListApi {
 
         await list.save();
 
-        const listPopulated = await List.populate(list, "items");
-
-        return listPopulated;
+        return await List.populate(list, "items");
     }
 
     static async reorderItems(pin, listId, itemOldPositionIndex, itemNewPositionIndex) {
@@ -70,27 +91,49 @@ class ListApi {
     }
 
     static async setCompleted(pin, listId, completed) {
-        const list = await ListUtils.getById(pin, listId);
+        const [list, user] = await Promise.all([
+            ListUtils.getById(pin, listId),
+            UserUtils.getByPin(pin)
+        ]);
 
         list.completed = completed;
+        list.completedAt = new Date().toISOString(); // Set it to the current date
 
-        list.save();
+        // Save to history
+        user.historyLists.push(await this.createHistoryList(list));
+        user.stats.completedListsCount++; // Update stats
+
+        await Promise.all([ list.save(), user.save() ]);
 
         return list;
     }
 
     static async removeCompletedItems(pin, listId) {
-        const list = await ListUtils.getById(pin, listId).populate("items");
+        const [list, user] = await Promise.all([
+            ListUtils.getById(pin, listId).populate("items"),
+            UserUtils.getByPin(pin)
+        ]);
+
+        list.clearedAt.push(new Date().toISOString()); // Add the current date
+
+        await list.save();
+
+        // Save to history
+        user.historyLists.push(await this.createHistoryList(list));
+        user.stats.completedListsCount++; // Update stats
 
         list.items = list.items.filter(item => !item.completed); // Filter out the completed items
 
-        list.save();
+        await Promise.all([ user.save(), list.save() ]); // Save both simultaneously
 
         return list;
     }
 
     static async delete(pin, id) {
-        const list = await ListUtils.getById(pin, id);
+        const [list, user] = await Promise.all([
+            ListUtils.getById(pin, id),
+            UserUtils.getByPin(pin)
+        ]);
 
         // Remove all of the list's items simultaneously
         await Promise.all(list.items.map(item => Item.deleteOne({ _id: item._id })));
@@ -98,9 +141,50 @@ class ListApi {
         // Remove the list itself
         await List.deleteOne({ userPin: pin, _id: id });
 
-        // TODO: Remove the user's reference to the list
+        // Remove the user's reference to the list
+        user.lists.splice(user.lists.indexOf(id), 1);
 
+        // Increment the user stats
+        user.stats.deletedListsCount++;
+        user.stats.deletedItemsCount += list.items.length; // Count the items too
+
+        await user.save();
+        
         return ({ listId: id });
+    }
+
+    static async createHistoryList(list) {
+        const listData = { 
+            name: list.name, 
+            clearedAt: list.clearedAt, 
+            userPin: list.userPin, 
+            createdAt: list.createdAt, 
+            completedAt: new Date().toISOString(), // Current date 
+            isHistoryList: true 
+        };
+
+        const [historyList, historyItems] = await Promise.all([
+            await List.create(listData),
+            await Promise.all(
+                list.items.map(({ text, completed, completedAt, createdAt }) => Item.create({ 
+                    userPin: list.userPin, 
+                    listId: list._id, 
+                    text, 
+                    completed, 
+                    completedAt,
+                    createdAt, 
+                    isHistoryItem: true 
+                })))
+        ]);
+
+        for (let i = 0; i < historyItems.length; i++) {
+            historyItems[i].listId = historyList._id; // Set the proper id
+            historyItems[i].save();
+        }
+
+        historyList.items = historyItems.map(item => item._id);
+
+        return await historyList.save();
     }
 }
 

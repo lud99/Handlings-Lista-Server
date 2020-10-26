@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const ListSchema = mongoose.Schema({
+    displayId: { type: String, unique: true },
     name: {
         type: String,
         default: "Namnlös lista"
@@ -15,10 +16,16 @@ const ListSchema = mongoose.Schema({
         maxLength: 6,
         require: true
     },
+    isHistoryList: { 
+        type: Boolean,
+        default: false
+    },
     completed: {
         type: Boolean,
         default: false
     },
+    completedAt: { type: Date },
+    clearedAt: [{ type: Date }],
     createdAt: {
         type: Date,
         default: Date.now

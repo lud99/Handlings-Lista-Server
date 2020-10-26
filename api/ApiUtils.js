@@ -8,6 +8,7 @@ const UserUtils = {
 
 const ListUtils = {
     getById: (pin, id, options = { populate: "items" }) => List.findOne({ _id: id }).populate(options.populate),
+    getByDisplayId: (displayId) => List.findOne({ displayId }),
 }
 
 const ItemUtils = {

@@ -13,6 +13,12 @@ class UserApi {
                     path: "items",
                     model: "Item"
                 }  
+            }).populate({
+                path: "historyLists",
+                populate: {
+                    path: "items",
+                    model: "Item"
+                }  
             });
 
         if (!users) return null; 

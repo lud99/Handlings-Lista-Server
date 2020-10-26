@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 
 exports.connectDB = async () => {
     try {        
-        const uri = process.env.NODE_ENV === "dev" ? 
-            process.env.MONGO_URI_HANDLINGS_LISTA_DEV : process.env.MONGO_URI_HANDLINGS_LISTA_PROD;
+        const uri = (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "dev")  ? 
+            process.env.MONGO_URI_HANDLINGSLISTA_DEV : process.env.MONGO_URI_HANDLINGSLISTA_PROD;
 
         // Try to connect
         const conn = await mongoose.createConnection(uri, {

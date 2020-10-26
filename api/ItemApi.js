@@ -1,12 +1,16 @@
 const Item = require("../modules/ItemSchema");
 
-const { ListUtils, ItemUtils } = require("./ApiUtils");
+const { ListUtils, ItemUtils, UserUtils } = require("./ApiUtils");
 
 class ItemApi {
     static async create(pin, text, listId, completed = false) {
         if (!pin || !listId) throw "Invalid PIN or ListId Specified";
 
-        const list = await ListUtils.getById(pin, listId);
+        // Get both the list and user at the same time
+        const [list, user] = await Promise.all([
+            ListUtils.getById(pin, listId),
+            UserUtils.getByPin(pin)
+        ]);
 
         if (list.completed) throw "List is completed. No changes can be made";
 
@@ -20,17 +24,19 @@ class ItemApi {
         if (!list) throw "Invalid PIN or ListId Specified";
 
         list.items.push(item);
+        user.stats.createdItemsCount++;
         
-        list.save();
+        await Promise.all([ user.save(), list.save() ]);
 
         return item;
     }
 
     static async updateState(pin, itemId, listId, completed, toggleState = false) {
-        // Get both the list and item at the same time
-        const [list, item] = await Promise.all([
+        // Get
+        const [list, item, user] = await Promise.all([
             ListUtils.getById(pin, listId),
-            ItemUtils.getById(pin, itemId)
+            ItemUtils.getById(pin, itemId),
+            UserUtils.getByPin(pin)
         ]);
 
         if (!item) throw "Invalid PIN or Item ID specified";
@@ -39,7 +45,15 @@ class ItemApi {
         // Update the completed state by either toggling it or setting it
         toggleState ? item.completed = !item.completed : item.completed = completed;
 
-        item.save();
+        if (item.completed) {
+            item.completedAt = new Date().toISOString(); // Only update date if its completed
+
+            user.stats.completedItemsCount++; // Increment if completed
+        } else {
+            user.stats.completedItemsCount--; // Decrement if not completed
+        }
+
+        await Promise.all([ user.save(), item.save() ]);
 
         return item;
     }
@@ -65,16 +79,22 @@ class ItemApi {
     static async delete(pin, itemId, listId, query = { userPin: pin, _id: listId }) {
         await Item.deleteOne(query);
 
-        const list = await ListUtils.getById(pin, listId);
+        const [list, user] = await Promise.all([
+            ListUtils.getById(pin, listId),
+            UserUtils.getByPin(pin)
+        ]);
 
-        if (!list) throw "Invalid PIN or ListId Specified";
+        if (!list || !user) throw "Invalid PIN or ListId Specified";
 
         // Find the specified item, and then the index of it in the items array to easily remove it
         const itemToDeleteIndex = list.items.indexOf(list.items.find(item => item._id == itemId));
 
         list.items.splice(itemToDeleteIndex, 1);
 
-        list.save();
+        // Increment the user stats
+        user.stats.deletedItemsCount++;
+
+        await Promise.all([ list.save(), user.save() ]);
 
         return ({ listId: listId, itemId: itemId });
     }

@@ -8,6 +8,10 @@ class Utils {
         return result;
     }
 
+    static createIdLetters(length = 6, chars = "abcdefghijklmnopqrstuvwxyz") {
+        return this.createId(length, chars);
+    }
+
     static createPIN(length = 6) {
         return this.createId(6, "1234567890");
     }

@@ -153,14 +153,14 @@ const handleMessage = async (client, message) => {
 
                 break;
             }
-            case "get-lists": {
+            case "get-user": {
                 // Access the api functions through this function to automatically catch any errors 
                 const response = await accessApi(
                     UserApi.get({ pin: message.pin }, { one: true })
                 );
 
                 if (webSocketLogLevel == WebSocketLogLevels.Full)
-                    console.log("Sending lists to client '%s' with the pin '%s'", client.id, message.pin);
+                    console.log("Sending user to client '%s' with the pin '%s'", client.id, message.pin);
 
                 sendResponse(client, message, response, Send.Single);
 
@@ -169,7 +169,7 @@ const handleMessage = async (client, message) => {
             case "get-list": {
                 // Access the api functions through this function to automatically catch any errors 
                 const response = await accessApi(
-                    ListUtils.getById(undefined, message.listId)
+                    ListUtils.getByDisplayId(message.displayListId).populate("items")
                 );
 
                 // Also join the session if specified
@@ -233,7 +233,7 @@ const handleMessage = async (client, message) => {
 
                 // Join session if the client is for some reason not in one
                 if (!client.session)
-                    joinSession(client, message.pin);
+                    joinSession(client, message.pin); 
 
                 sendResponse(client, message, response, Send.Broadcast);
 
