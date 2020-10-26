@@ -58,6 +58,10 @@ class UserApi {
 
         return user;
     }
+
+    static async getStats(pin) {
+        return (await User.findOne({ pin })).stats;
+    }
 }
 
 module.exports = UserApi;

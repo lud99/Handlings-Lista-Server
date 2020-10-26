@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const ListSchema = mongoose.Schema({
-    displayId: { type: String, unique: true },
+    displayId: { type: String },
     name: {
         type: String,
         default: "Namnlös lista"

@@ -107,7 +107,10 @@ const handleMessage = async (client, message) => {
                 if (!client.session)
                     joinSession(client, message.pin);
 
-                sendResponse(client, message, response, Send.Broadcast)
+                sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break;
             }
@@ -122,6 +125,9 @@ const handleMessage = async (client, message) => {
                     joinSession(client, message.pin);
 
                 sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break;
             }
@@ -150,6 +156,9 @@ const handleMessage = async (client, message) => {
                     joinSession(client, message.pin);
 
                 sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break;
             }
@@ -195,6 +204,9 @@ const handleMessage = async (client, message) => {
 
                 sendResponse(client, message, response, Send.Broadcast);
 
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
+
                 break;
             }
             case "remove-list-item": {
@@ -208,6 +220,9 @@ const handleMessage = async (client, message) => {
                     joinSession(client, message.pin);
 
                 sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break;
             }
@@ -223,6 +238,9 @@ const handleMessage = async (client, message) => {
 
                 sendResponse(client, message, response, Send.Broadcast);
 
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
+
                 break;
             }
             case "update-list-item-state": {
@@ -236,6 +254,9 @@ const handleMessage = async (client, message) => {
                     joinSession(client, message.pin); 
 
                 sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break;
             }
@@ -294,6 +315,9 @@ const handleMessage = async (client, message) => {
                     joinSession(client, message.pin);
 
                 sendResponse(client, message, response, Send.Broadcast);
+
+                // Broadcast stats to all clients
+                broadcastStats(client, message.pin);
 
                 break; 
             }
@@ -402,6 +426,10 @@ const sendResponse = (client, message, response, sendType = Send.Single) => {
         client.send(res);
     else if (sendType === Send.Broadcast)
         client.session.broadcast(res);
+}
+
+const broadcastStats = async (client, pin) => {
+    sendResponse(client, { type: "stats-broadcast" }, await accessApi(UserApi.getStats(pin)), Send.Broadcast);
 }
 
 const accessApi = async (promise) => {

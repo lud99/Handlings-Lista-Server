@@ -28,7 +28,7 @@ class ListApi {
             }
         }
 
-        if (!list) throw "Duplicate list display ids"; // Should happen...
+        if (!list) throw "Duplicate list display ids"; // Shouldn't happen...
 
         // Create new list items from the specified items (if there are any) 
         if (items && items.length > 0) {
