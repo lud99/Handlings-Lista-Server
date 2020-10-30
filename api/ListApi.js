@@ -79,6 +79,22 @@ class ListApi {
         return list;
     }
 
+    static async sortItems(pin, listId, sortOrder) {
+        const list = await ListUtils.getById(pin, listId);
+
+        const sortedItems = list.items.slice().sort(Utils.sortByProperty(sortOrder));
+        list.items = sortedItems;
+
+        list.save();
+
+        const itemIds = list.items.map(item => item._id);
+
+        const returnedList = JSON.parse(JSON.stringify(list));
+        returnedList.items = itemIds;
+
+        return returnedList;
+    }
+
     static async rename(pin, listId, newName) {
         const list = await ListUtils.getById(pin, listId);
 

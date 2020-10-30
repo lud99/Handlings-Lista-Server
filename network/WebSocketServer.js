@@ -276,6 +276,22 @@ const handleMessage = async (client, message) => {
 
                 break; 
             }
+            case "sort-list-items": {
+                const { pin, listId, sortOrder } = message;
+
+                // Access the api functions through this function to automatically catch any errors 
+                const response = await accessApi(
+                    ListApi.sortItems(pin, listId, sortOrder)
+                );
+
+                // Join session if the client is for some reason not in one
+                if (!client.session)
+                    joinSession(client, pin);
+
+                sendResponse(client, message, response, Send.Broadcast);
+
+                break; 
+            }
             case "rename-list-item": {
                 // Access the api functions through this function to automatically catch any errors 
                 const response = await accessApi(
