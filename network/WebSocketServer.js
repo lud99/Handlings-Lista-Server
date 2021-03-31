@@ -22,16 +22,12 @@ const Send = {
     Broadcast: 1, 
 }
 
-let ws, sessions;
+let sessions;
 
-const start = (server, path) => {
-    ws = new WebSocketServer({ server, path });
-
+const init = (path = "/") => {
     console.log("Handlingslista's WebSocketServer running on path '%s'", path)
 
     sessions = new Map();
-
-    ws.on("connection", onConnection);
 }
 
 const onConnection = (conn) => {
@@ -458,4 +454,5 @@ const accessApi = async (promise) => {
     }
 }
 
-module.exports = start;
+module.exports.init = init;
+module.exports.onConnection = onConnection;

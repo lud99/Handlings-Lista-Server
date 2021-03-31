@@ -1,5 +1,4 @@
 const express = require("express");
-const http = require("http");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
@@ -9,20 +8,20 @@ const { connectDB } = require("./config/db");
 dotenv.config({ path: __dirname + "/config/config.env" });
 dotenv.config({ path: __dirname + "/config/secrets.env" });
 
-const app = express();
-
-// CORS
-app.use(cors());
-
-// JSON
-app.use(express.json());
-
 // Setup the websocket log level
 global.WebSocketLogLevels = {
     None: 0,
     Minimal: 1,
     Full: 2
 }
+
+const router = express.Router();
+
+// CORS
+router.use(cors());
+
+// JSON
+router.use(express.json());
 
 global.webSocketLogLevel = process.env.WEBSOCKET_LOG_LEVEL || WebSocketLogLevels.Minimal;
 
@@ -32,31 +31,22 @@ if (!global.connections) global.connections = {};
 module.exports = () => {
     const module = {};
 
-    const PORT = process.env.HANDLINGS_LISTA_PORT || 8080;
-
     // Connect to the database, then start http and WebSocket server
-    module.startServer = async (server, path = "/") => {
+    module.startServer = async (absolutePath = "/") => {
         await connectDB();
 
         const WebSocketServer = require('./network/WebSocketServer');
+        WebSocketServer.init(absolutePath);
+
+        router.websocket("/", (info, cb) => cb(WebSocketServer.onConnection));
         
         // Routes
-        app.use("/api/v1/users", require("./routes/users"));
-        app.use("/api/v1/users/lists", require("./routes/lists"));
-        app.use("/api/v1/users/lists/items", require("./routes/items"));
-
-        // Create and start the server manually if none is specified
-        if (!server) {
-            server = http.createServer(app);
-
-            server.listen(PORT, () => console.log("Handlings Lista's WebSocketServer running on port", PORT));
-        }
-
-        // Start websocket server
-        WebSocketServer(server, path);
+        router.use("/api/v1/users", require("./routes/users"));
+        router.use("/api/v1/users/lists", require("./routes/lists"));
+        router.use("/api/v1/users/lists/items", require("./routes/items"));
     }
 
-    module.app = app;
+    module.app = router;
 
     return module;
 }
