@@ -12,8 +12,7 @@ const ItemSchema = mongoose.Schema({
     completedAt: { type: Date },
     listId: {
         type: String,
-        minLength: 6,
-        maxLength: 6,
+        maxLength: 10000,
         require: true
     },
     userPin: {
