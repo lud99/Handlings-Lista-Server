@@ -1,5 +1,6 @@
 // Import the app
 const app = require("./app")();
+const fs = require("fs");
 
 const https = require("https");
 
@@ -16,4 +17,4 @@ if (fs.existsSync(process.env.PRIV_KEY)) {
 server.listen(port, () => console.log("Handlingslista running on port", port))
 
 // Start the server
-app.startServer("/handlingslista");
+app.startServer(server, "/handlingslista");
