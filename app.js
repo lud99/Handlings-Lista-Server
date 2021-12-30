@@ -49,9 +49,9 @@ module.exports = () => {
         //router.websocket("/", (info, cb) => cb(WebSocketServer.onConnection));
         
         // Routes
-        router.use("/api/v1/users", require("./routes/users"));
-        router.use("/api/v1/users/lists", require("./routes/lists"));
-        router.use("/api/v1/users/lists/items", require("./routes/items"));
+        // router.use("/api/v1/users", require("./routes/users"));
+        // router.use("/api/v1/users/lists", require("./routes/lists"));
+        // router.use("/api/v1/users/lists/items", require("./routes/items"));
     }
 
     module.app = router;
