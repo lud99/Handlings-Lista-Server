@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const ws = require("ws").Server;
 const cors = require("cors");
 
 const { connectDB } = require("./config/db");
@@ -32,13 +33,20 @@ module.exports = () => {
     const module = {};
 
     // Connect to the database, then start http and WebSocket server
-    module.startServer = async (absolutePath = "/") => {
+    module.startServer = async (server, absolutePath = "/") => {
         await connectDB();
 
         const WebSocketServer = require('./network/WebSocketServer');
         WebSocketServer.init(absolutePath);
 
-        router.websocket("/", (info, cb) => cb(WebSocketServer.onConnection));
+        var wss = new ws({
+            server: server,
+            path: absolutePath
+        });
+
+        wss.on("connection", WebSocketServer.onConnection);
+
+        //router.websocket("/", (info, cb) => cb(WebSocketServer.onConnection));
         
         // Routes
         router.use("/api/v1/users", require("./routes/users"));
